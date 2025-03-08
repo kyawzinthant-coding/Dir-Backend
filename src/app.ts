@@ -7,7 +7,25 @@ import routes from "./routes/v1/index";
 import { Request, Response, NextFunction } from "express";
 import { limiter } from "./middlewares/rateLimiter";
 import cookieParser from "cookie-parser";
+
 export const app = express();
+
+var whitelist = ["http://example1.com", "http://localhost:3000"];
+var corsOptions = {
+  origin: function (
+    origin: any,
+    callback: (err: Error | null, origin?: any) => void
+  ) {
+    // Allow requests with no origin ( like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (whitelist.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true, // Allow cookies or authorization header
+};
 
 app
   .use(limiter)
