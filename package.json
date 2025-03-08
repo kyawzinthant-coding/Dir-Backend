@@ -40,10 +40,12 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "@types/cookie-parser": "^1.4.8",
     "axios": "^1.8.2",
     "bcrypt": "^5.1.1",
     "commitizen": "^4.3.1",
     "compression": "^1.8.0",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "cz-conventional-changelog": "^3.3.0",
     "cz-customizable": "^7.4.0",

@@ -1,5 +1,4 @@
 import { errorCode } from "./../../config/errorCode";
-import axios from "axios";
 
 export const checkUserExist = (user: any, field: string) => {
   if (user) {

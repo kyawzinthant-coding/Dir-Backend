@@ -5,8 +5,8 @@ import compression from "compression";
 import cors from "cors";
 import routes from "./routes/v1/index";
 import { Request, Response, NextFunction } from "express";
-
 import { limiter } from "./middlewares/rateLimiter";
+import cookieParser from "cookie-parser";
 export const app = express();
 
 app
@@ -16,7 +16,8 @@ app
   .use(express.json())
   .use(cors())
   .use(helmet())
-  .use(compression());
+  .use(compression())
+  .use(cookieParser());
 
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "same-site");

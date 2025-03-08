@@ -1,9 +1,11 @@
+import jwt from "jsonwebtoken";
 // controllers/authController.ts
 import { NextFunction, Request, Response } from "express";
 import { validationResult } from "express-validator";
 import {
   createuser,
   getUserByEmail,
+  getUserById,
   getUserbyUsername,
   UpdateUser,
 } from "../services/authService";
@@ -13,6 +15,8 @@ import { setAuthCookies } from "../utils/cookies";
 import bcrypt from "bcrypt";
 import { createError } from "../utils/error";
 import { loginValidation, registerValidation } from "../middlewares/validation";
+import { errorCode } from "../../config/errorCode";
+import { generateToken } from "../utils/generateToken";
 
 export const register = [
   ...registerValidation,
@@ -39,7 +43,7 @@ export const register = [
       });
       const { accessToken, refreshToken } = generateTokens(newUser);
 
-      await UpdateUser(newUser.id, { refreshToken });
+      await UpdateUser(newUser.id, { randToken: refreshToken });
       setAuthCookies(res, accessToken, refreshToken);
 
       res
@@ -60,24 +64,73 @@ export const login = [
       return next(createError(errors[0].msg, 400, "invalid"));
 
     const { email, password } = req.body;
-    try {
-      const user = await getUserByEmail(email);
-      checkUserifNotExist(user);
 
-      const isMatch = await bcrypt.compare(password, user!.password);
-      if (!isMatch)
-        return next(createError("Invalid email or password.", 401, "invalid"));
+    const user = await getUserByEmail(email);
+    checkUserifNotExist(user);
 
-      const { accessToken, refreshToken } = generateTokens(user!);
-      await UpdateUser(user!.id, { refreshToken });
-      setAuthCookies(res, accessToken, refreshToken);
+    const isMatch = await bcrypt.compare(password, user!.password);
+    if (!isMatch)
+      return next(createError("Invalid email or password.", 401, "invalid"));
 
-      res
-        .status(200)
-        .json({ message: "Successfully logged in", userId: user!.id });
-    } catch (error) {
-      console.error(error);
-      next(createError("Server error.", 500, "server_error"));
-    }
+    const { accessToken, refreshToken } = generateTokens(user!);
+    await UpdateUser(user!.id, { randToken: refreshToken });
+    setAuthCookies(res, accessToken, refreshToken);
+
+    res
+      .status(200)
+      .json({ message: "Successfully logged in", userId: user!.id });
   },
 ];
+
+export const logout = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const refreshToken = req.cookies ? req.cookies.refreshToken : null;
+
+  if (!refreshToken) {
+    return next(
+      createError(
+        "You are not an authenticated user!.",
+        401,
+        errorCode.unauthenticated
+      )
+    );
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET!) as {
+      id: string;
+      email: string;
+    };
+  } catch (err) {
+    return next(
+      createError(
+        "You are not an authenticated user!.",
+        401,
+        errorCode.unauthenticated
+      )
+    );
+  }
+
+  const user = await getUserById(decoded.id);
+  checkUserifNotExist(user);
+
+  if (user?.email != decoded.email) {
+    return next(
+      createError(
+        "You are not an authenticated user!.",
+        401,
+        errorCode.unauthenticated
+      )
+    );
+  }
+
+  await UpdateUser(user!.id, { randToken: generateToken() });
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+
+  res.status(200).json({ message: "Successfully logged out" });
+};
