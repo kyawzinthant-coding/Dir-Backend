@@ -1,11 +1,12 @@
 import express from "express";
 import authRoutes from "./auth";
-import userRoutes from "./admin/user";
+import adminRoutes from "./admin/user";
 import { auth } from "../../middlewares/auth";
+import { authorize } from "../../middlewares/authorise";
 
 const router = express.Router();
 
 router.use("/api/v1/auth", authRoutes);
-router.use("/api/v1/admin", auth, userRoutes);
+router.use("/api/v1/admin", auth, authorize(true, "ADMIN"), adminRoutes);
 
 export default router;
