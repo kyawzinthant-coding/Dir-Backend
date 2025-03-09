@@ -26,33 +26,31 @@ export const register = [
       return next(createError(errors[0].msg, 400, "invalid"));
 
     const { username, email, password } = req.body;
-    try {
-      const [existingUser, existingUserWithUsername] = await Promise.all([
-        getUserByEmail(email),
-        getUserbyUsername(username),
-      ]);
 
-      checkUserExist(existingUser, "email");
-      checkUserExist(existingUserWithUsername, "username");
+    const [existingUser, existingUserWithUsername] = await Promise.all([
+      getUserByEmail(email),
+      getUserbyUsername(username),
+    ]);
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = await createuser({
-        username,
-        email,
-        password: hashedPassword,
-      });
-      const { accessToken, refreshToken } = generateTokens(newUser);
+    checkUserExist(existingUser, "email");
+    checkUserExist(existingUserWithUsername, "username");
 
-      await UpdateUser(newUser.id, { randToken: refreshToken });
-      setAuthCookies(res, accessToken, refreshToken);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      res
-        .status(201)
-        .json({ message: "User created successfully", userId: newUser.id });
-    } catch (error) {
-      console.error(error);
-      next(createError("Server error.", 500, "server_error"));
-    }
+    const newUser = await createuser({
+      username,
+      email,
+      password: hashedPassword,
+      randToken: generateToken(),
+    });
+    const { accessToken, refreshToken } = generateTokens(newUser);
+
+    await UpdateUser(newUser.id, { randToken: refreshToken });
+    setAuthCookies(res, accessToken, refreshToken);
+
+    res
+      .status(201)
+      .json({ message: "User created successfully", userId: newUser.id });
   },
 ];
 
@@ -133,4 +131,25 @@ export const logout = async (
   res.clearCookie("refreshToken");
 
   res.status(200).json({ message: "Successfully logged out" });
+};
+
+interface CustomRequest extends Request {
+  userId?: string;
+}
+
+export const authCheck = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const userId = req.userId;
+  const user = await getUserById(userId!);
+  checkUserifNotExist(user);
+
+  res.status(200).json({
+    message: "You are authenticated.",
+    userId: user?.id,
+    username: user?.username,
+    email: user?.email,
+  });
 };

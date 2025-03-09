@@ -32,7 +32,7 @@ app
   .use(morgan("dev"))
   .use(express.urlencoded({ extended: true }))
   .use(express.json())
-  .use(cors())
+  .use(cors(corsOptions))
   .use(helmet())
   .use(compression())
   .use(cookieParser());
