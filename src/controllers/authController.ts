@@ -14,9 +14,64 @@ import { generateTokens } from "../utils/token";
 import { setAuthCookies } from "../utils/cookies";
 import bcrypt from "bcrypt";
 import { createError } from "../utils/error";
-import { loginValidation, registerValidation } from "../middlewares/validation";
+import {
+  emailCheck,
+  loginValidation,
+  registerValidation,
+  usernameCheck,
+} from "../middlewares/validation";
 import { errorCode } from "../../config/errorCode";
 import { generateToken } from "../utils/generateToken";
+
+export const EmailCheck = [
+  ...emailCheck,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0)
+      return next(createError(errors[0].msg, 400, "invalid"));
+
+    const { email } = req.body;
+    const user = await getUserByEmail(email);
+
+    if (user) {
+      return next(createError("Email is already registered", 400, "invalid"));
+    }
+
+    res.status(200).json({ message: "Email is available" });
+  },
+];
+
+export const UserNameCheck = [
+  ...usernameCheck,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0)
+      return next(createError(errors[0].msg, 400, "invalid"));
+
+    const { username } = req.body;
+    const user = await getUserbyUsername(username);
+    checkUserifNotExist(user);
+
+    res.status(200).json({ message: "Username is available" });
+  },
+];
+
+export const getMe = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const userId = req.userId;
+  const user = await getUserById(userId!);
+  checkUserifNotExist(user);
+
+  res.status(200).json({
+    message: "You are authenticated.",
+    userId: user?.id,
+    username: user?.username,
+    email: user?.email,
+  });
+};
 
 export const register = [
   ...registerValidation,
