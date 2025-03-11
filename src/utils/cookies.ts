@@ -9,7 +9,7 @@ export const setAuthCookies = (
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-    maxAge: 15 * 60 * 1000,
+    maxAge: 15 * 1000 * 60,
     path: "/",
   });
 
