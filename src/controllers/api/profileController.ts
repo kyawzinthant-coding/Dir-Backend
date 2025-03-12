@@ -5,6 +5,8 @@ import { checkUploadFile } from "../../utils/check";
 import { UpdateUser } from "../../services/authService";
 import { unlink } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
+import { optimizeImage, UPLOADS_DIR } from "../../utils/optimizeImage";
 
 interface CustomRequest extends Request {
   userId?: string;
@@ -23,22 +25,26 @@ export const uploadProfile = async (
   const image = req.file;
   checkUploadFile(image);
 
-  const fileName = image!.filename;
+  const fileName = Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
+  const optmizedImage = path.join(UPLOADS_DIR, fileName);
+
+  try {
+    await optimizeImage(image.buffer, optmizedImage, 200, 200, 50);
+    console.log("Image optimized successfully!");
+  } catch (error) {
+    console.error("Failed to optimize image:", error);
+  }
+
   //   const filePath = image!.path;
   //   const filePath2 = image!.path.replace("\\", "/"); for window
 
-  if (user?.image) {
-    const filePath = path.join(
-      __dirname,
-      "../../../",
-      "/uploads/images",
-      user!.image!
-    );
-
+  // Delete the old image if it exists
+  if (user!.image) {
+    const oldImagePath = path.join(UPLOADS_DIR, user!.image);
     try {
-      await unlink(filePath);
+      await unlink(oldImagePath);
     } catch (error) {
-      console.log(error);
+      console.error(`Failed to delete old image: ${error}`);
     }
   }
 

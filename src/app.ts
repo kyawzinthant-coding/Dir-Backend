@@ -42,6 +42,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(express.static("uploads"));
+
 app.use(routes);
 
 app.use((error: any, req: Request, res: Response, next: NextFunction) => {
