@@ -26,3 +26,22 @@ export const usernameCheck = [
     .isLength({ min: 3 })
     .withMessage("Username must be at least 3 characters."),
 ];
+
+export const createProviderValidation = [
+  body("name")
+    .notEmpty()
+    .withMessage("Name is required")
+    .isString()
+    .withMessage("Name must be a string")
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Name must be between 2 and 50 characters"),
+];
+
+export const updateProviderValidation = [
+  body("name")
+    .optional()
+    .isString()
+    .withMessage("Name must be a string")
+    .isLength({ min: 2, max: 50 })
+    .withMessage("Name must be between 2 and 50 characters"),
+];

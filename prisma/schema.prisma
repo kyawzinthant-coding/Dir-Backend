@@ -21,11 +21,12 @@ model User {
 }
 
 model Provider {
-  id      String   @id @default(auto()) @map("_id") @db.ObjectId
-  name    String
-  logoSrc String
-  logoAlt String
-  series  Series[] @relation("ProviderToSeries")
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  image     String
+  series    Series[] @relation("ProviderToSeries")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Series {
@@ -36,15 +37,19 @@ model Series {
   provider   Provider @relation(fields: [providerId], references: [id], name: "ProviderToSeries")
   providerId String   @db.ObjectId
   courses    Course[] @relation("SeriesToCourse")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Course {
-  id         String @id @default(auto()) @map("_id") @db.ObjectId
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   name       String
   duration   String
   coverImage String
-  series     Series @relation(fields: [seriesId], references: [id], name: "SeriesToCourse")
-  seriesId   String @db.ObjectId
+  series     Series   @relation(fields: [seriesId], references: [id], name: "SeriesToCourse")
+  seriesId   String   @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum Role {

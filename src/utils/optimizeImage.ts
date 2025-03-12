@@ -19,4 +19,4 @@ export const optimizeImage = async (
   }
 };
 
-export const UPLOADS_DIR = path.join(__dirname, "../../../", "/uploads/images");
+export const UPLOADS_DIR = path.join(__dirname, "/../../", "/uploads/images");
