@@ -1,6 +1,5 @@
-import { PrismaClient, Provider, Series } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import { Provider, Series } from "@prisma/client";
+import { prisma } from "./prismaClient";
 
 export interface ProviderArgs {
   name: string;

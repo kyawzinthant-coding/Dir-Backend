@@ -32,24 +32,25 @@ model Provider {
 model Series {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   name       String
-  category   String
-  coverImage String
+  image      String
   provider   Provider @relation(fields: [providerId], references: [id], name: "ProviderToSeries")
   providerId String   @db.ObjectId
   courses    Course[] @relation("SeriesToCourse")
+  categoryId String   @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model Course {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  duration   String
-  coverImage String
-  series     Series   @relation(fields: [seriesId], references: [id], name: "SeriesToCourse")
-  seriesId   String   @db.ObjectId
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  duration  String
+  image     String
+  series    Series   @relation(fields: [seriesId], references: [id], name: "SeriesToCourse")
+  seriesId  String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Role {
@@ -62,4 +63,10 @@ enum Status {
   ACTIVE
   INACTIVE
   FREEZE
+}
+
+model Category {
+  id     String   @id @default(auto()) @map("_id") @db.ObjectId
+  name   String   @unique
+  series Series[]
 }

@@ -1,3 +1,4 @@
+import { unlink } from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 
@@ -20,3 +21,13 @@ export const optimizeImage = async (
 };
 
 export const UPLOADS_DIR = path.join(__dirname, "/../../", "/uploads/images");
+
+export const removeFiles = async (originalFile: string) => {
+  try {
+    const originalFilePath = path.join(UPLOADS_DIR, originalFile);
+
+    await unlink(originalFilePath);
+  } catch (error) {
+    console.log(error);
+  }
+};

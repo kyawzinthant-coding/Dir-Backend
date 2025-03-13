@@ -8,7 +8,11 @@ import { createError } from "../../utils/error";
 import { checkModelIfExist, checkUploadFile } from "../../utils/check";
 import { Provider } from "@prisma/client";
 import path from "path";
-import { optimizeImage, UPLOADS_DIR } from "../../utils/optimizeImage";
+import {
+  optimizeImage,
+  removeFiles,
+  UPLOADS_DIR,
+} from "../../utils/optimizeImage";
 import {
   createOneProvider,
   deleteOneProvider,
@@ -23,16 +27,6 @@ interface CustomRequest extends Request {
   userId?: number;
   user?: any;
 }
-
-const removeFiles = async (originalFile: string) => {
-  try {
-    const originalFilePath = path.join(UPLOADS_DIR, originalFile);
-
-    await unlink(originalFilePath);
-  } catch (error) {
-    console.log(error);
-  }
-};
 
 export const createProvider = [
   ...createProviderValidation,

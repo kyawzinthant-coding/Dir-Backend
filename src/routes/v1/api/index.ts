@@ -1,7 +1,8 @@
 import express from "express";
 import { auth } from "../../../middlewares/auth";
-import upload, { uploadMemory } from "../../../middlewares/uploadFile";
+import { uploadMemory } from "../../../middlewares/uploadFile";
 import { uploadProfile } from "../../../controllers/api/profileController";
+import { getProvider } from "../../../controllers/api/providerController";
 
 const router = express.Router();
 
@@ -11,5 +12,7 @@ router.patch(
   uploadMemory.single("avatar"),
   uploadProfile
 );
+
+router.get("/providers/:id", getProvider);
 
 export default router;
