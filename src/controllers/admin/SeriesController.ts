@@ -1,15 +1,24 @@
-import { validationResult } from "express-validator";
+import { body, validationResult } from "express-validator";
 import { createError } from "../../utils/error";
 import { NextFunction, Request, Response } from "express";
-import { checkUploadFile } from "../../utils/check";
+import { checkModelIfExist, checkUploadFile } from "../../utils/check";
 import path from "path";
 import {
   optimizeImage,
   removeFiles,
   UPLOADS_DIR,
 } from "../../utils/optimizeImage";
-import { createSeries } from "../../services/seriesService";
-import { createSeriesValidation } from "../../middlewares/validation";
+import {
+  createSeries,
+  deleteOneSeries,
+  getOneSerie,
+  SeriesArgs,
+  updateOneSeries,
+} from "../../services/seriesService";
+import {
+  createSeriesValidation,
+  updateSeriesValidation,
+} from "../../middlewares/validation";
 
 export const createSerie = [
   ...createSeriesValidation,
@@ -66,6 +75,68 @@ export const createSerie = [
   },
 ];
 
-export const updateSeries = async () => {};
+export const updateSeries = [
+  ...updateSeriesValidation,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0)
+      return next(createError(errors[0].msg, 400, "invalid"));
+    const { name, providerId, category, seriesId } = req.body;
 
-export const deleteSeries = async () => {};
+    console.log(seriesId);
+    const series = await getOneSerie(seriesId);
+    checkModelIfExist(series);
+
+    let data: SeriesArgs = {
+      name,
+      category,
+      providerId,
+      image: req.file?.filename!,
+    };
+
+    if (req.file) {
+      const fileName =
+        Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
+      const optmizedImage = path.join(UPLOADS_DIR, fileName);
+
+      try {
+        await optimizeImage(req.file!.buffer, optmizedImage, 900, 500, 90);
+        console.log("Image optimized successfully!");
+      } catch (error) {
+        console.error("Failed to optimize image:", error);
+        return next(
+          createError("Image optimization failed", 500, "server_error")
+        );
+      }
+
+      data.image = fileName;
+      await removeFiles(series!.image);
+    }
+
+    const updatedSeries = await updateOneSeries(series!.id, data);
+    res.status(200).json({
+      message: "Series updated successfully",
+      series: updatedSeries,
+    });
+  },
+];
+
+export const deleteSeries = [
+  body("seriesId", "Series id is required").isString(),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0)
+      return next(createError(errors[0].msg, 400, "invalid"));
+
+    const { seriesId } = req.body;
+    const series = await getOneSerie(seriesId);
+    checkModelIfExist(series);
+
+    await deleteOneSeries(seriesId);
+    await removeFiles(series!.image);
+    res.status(200).json({
+      message: "Series deleted successfully",
+      seriesId,
+    });
+  },
+];

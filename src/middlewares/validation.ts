@@ -70,6 +70,7 @@ export const createSeriesValidation = [
 ];
 
 export const updateSeriesValidation = [
+  body("seriesId", "Series Id is required.").isString(),
   body("name")
     .optional()
     .isString()

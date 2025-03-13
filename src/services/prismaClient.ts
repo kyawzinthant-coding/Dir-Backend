@@ -31,5 +31,23 @@ export const prisma = new PrismaClient().$extends({
         },
       },
     },
+    series: {
+      image: {
+        needs: { image: true },
+        compute(post) {
+          return "/images/" + post.image.split(".")[0] + ".webp";
+        },
+      },
+      updatedAt: {
+        needs: { updatedAt: true },
+        compute(post) {
+          return post?.updatedAt.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        },
+      },
+    },
   },
 });

@@ -1,12 +1,15 @@
-import { param, validationResult } from "express-validator";
+import { body, param, validationResult } from "express-validator";
 import { Request, Response, NextFunction } from "express";
 import { createError } from "../../utils/error";
 import { errorCode } from "../../../config/errorCode";
-import { getProviderById } from "../../services/ProviderService";
 import { checkModelIfExist } from "../../utils/check";
+import {
+  getOneSerie,
+  getOneSeriesWithRelationShip,
+} from "../../services/seriesService";
 
-export const getProvider = [
-  param("id", "Provider id is required").notEmpty(),
+export const getSerie = [
+  param("id", "Series id is required").notEmpty(),
 
   async (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
@@ -15,13 +18,13 @@ export const getProvider = [
       return next(createError(errors[0].msg, 400, errorCode.invalid));
     }
 
-    const providerId = req.params.id;
-    const provider = await getProviderById(providerId);
-    checkModelIfExist(provider);
+    const serieId = req.params.id;
+    const serie = await getOneSeriesWithRelationShip(serieId);
+    checkModelIfExist(serie);
 
     res.status(200).json({
-      message: "Provider details",
-      provider,
+      message: "Series details",
+      serie,
     });
   },
 ];

@@ -21,7 +21,6 @@ import {
   updateOneProvider,
 } from "../../services/ProviderService";
 import { errorCode } from "../../../config/errorCode";
-import { unlink } from "fs/promises";
 
 interface CustomRequest extends Request {
   userId?: number;

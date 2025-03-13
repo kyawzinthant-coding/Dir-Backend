@@ -3,6 +3,7 @@ import { auth } from "../../../middlewares/auth";
 import { uploadMemory } from "../../../middlewares/uploadFile";
 import { uploadProfile } from "../../../controllers/api/profileController";
 import { getProvider } from "../../../controllers/api/providerController";
+import { getSerie } from "../../../controllers/api/SeriesController";
 
 const router = express.Router();
 
@@ -14,5 +15,5 @@ router.patch(
 );
 
 router.get("/providers/:id", getProvider);
-
+router.get("/series/:id", getSerie);
 export default router;
