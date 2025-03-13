@@ -3,14 +3,15 @@ import {
   createProviderValidation,
   updateProviderValidation,
 } from "../../middlewares/validation";
-import { validationResult } from "express-validator";
+import { body, validationResult } from "express-validator";
 import { createError } from "../../utils/error";
-import { checkUploadFile } from "../../utils/check";
+import { checkModelIfExist, checkUploadFile } from "../../utils/check";
 import { Provider } from "@prisma/client";
 import path from "path";
 import { optimizeImage, UPLOADS_DIR } from "../../utils/optimizeImage";
 import {
   createOneProvider,
+  deleteOneProvider,
   getProviderById,
   ProviderArgs,
   updateOneProvider,
@@ -68,10 +69,6 @@ export const createProvider = [
   },
 ];
 
-export const deleteProvider = [
-  async (req: Request, res: Response, next: NextFunction) => {},
-];
-
 export const updateProvider = [
   ...updateProviderValidation,
 
@@ -115,6 +112,30 @@ export const updateProvider = [
     res.status(201).json({
       message: "Provider updated successfully",
       provideId: providerId,
+    });
+  },
+];
+
+export const deleteProvider = [
+  body("providerId", "Provider id is required"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    // If validation error occurs
+    if (errors.length > 0) {
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
+    }
+
+    const { providerId } = req.body;
+
+    const provider = await getProviderById(providerId);
+    checkModelIfExist(provider);
+
+    await deleteOneProvider(provider?.id!);
+    await removeFiles(provider?.image!);
+
+    res.status(200).json({
+      message: "Successfully deleted the provider.",
+      postId: provider?.id,
     });
   },
 ];

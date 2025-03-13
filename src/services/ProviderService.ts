@@ -42,3 +42,9 @@ export const updateOneProvider = async (
     data: data,
   });
 };
+
+export const deleteOneProvider = async (id: string) => {
+  return prisma.provider.delete({
+    where: { id },
+  });
+};
