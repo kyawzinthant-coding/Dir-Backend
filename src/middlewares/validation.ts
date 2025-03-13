@@ -38,6 +38,7 @@ export const createProviderValidation = [
 ];
 
 export const updateProviderValidation = [
+  body("providerId", "Provider Id is required.").isString(),
   body("name")
     .optional()
     .isString()
