@@ -47,3 +47,7 @@ export const deleteOneProvider = async (id: string) => {
     where: { id },
   });
 };
+
+export const getProviderList = async (options: any) => {
+  return prisma.provider.findMany(options);
+};

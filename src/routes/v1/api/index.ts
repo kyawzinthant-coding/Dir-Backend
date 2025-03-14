@@ -2,7 +2,10 @@ import express from "express";
 import { auth } from "../../../middlewares/auth";
 import { uploadMemory } from "../../../middlewares/uploadFile";
 import { uploadProfile } from "../../../controllers/api/profileController";
-import { getProvider } from "../../../controllers/api/providerController";
+import {
+  getProvider,
+  getProviderByPagination,
+} from "../../../controllers/api/providerController";
 import { getSerie } from "../../../controllers/api/SeriesController";
 
 const router = express.Router();
@@ -16,4 +19,6 @@ router.patch(
 
 router.get("/providers/:id", getProvider);
 router.get("/series/:id", getSerie);
+
+router.get("/providers", getProviderByPagination);
 export default router;
