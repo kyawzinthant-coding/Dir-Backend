@@ -24,7 +24,7 @@ model Provider {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   name        String
   image       String
-  description String
+  description String?
   series      Series[] @relation("ProviderToSeries")
   status      Status   @default(ACTIVE)
   createdAt   DateTime @default(now())
@@ -37,7 +37,7 @@ model Series {
   image       String
   provider    Provider @relation(fields: [providerId], references: [id], name: "ProviderToSeries")
   providerId  String   @db.ObjectId
-  description String
+  description String?
   courses     Course[] @relation("SeriesToCourse")
   status      Status   @default(ACTIVE)
   categoryId  String   @db.ObjectId
@@ -49,7 +49,7 @@ model Series {
 model Course {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   name          String
-  description   String
+  description   String?
   status        Status   @default(ACTIVE)
   requirements  String[]
   price         Int

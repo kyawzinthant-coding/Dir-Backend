@@ -7,7 +7,7 @@ import { errorCode } from "../../../config/errorCode";
 
 import path from "path";
 import { optimizeImage, UPLOADS_DIR } from "../../utils/optimizeImage";
-import { createCourseService } from "../../services/productService";
+import { createCourseService } from "../../services/courseService";
 
 interface CustomRequest extends Request {
   userId?: number;

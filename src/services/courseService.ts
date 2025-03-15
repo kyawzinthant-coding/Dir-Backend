@@ -2,7 +2,7 @@ import { prisma } from "./prismaClient";
 
 export const createCourseService = async (data: any) => {
   try {
-    // Create the course first
+    // Create the course
     const course = await prisma.course.create({
       data: {
         name: data.name,
@@ -12,23 +12,29 @@ export const createCourseService = async (data: any) => {
         format: data.format,
         edition: data.edition,
         authors: data.authors,
-        previewImage: data.previewImage, // Optimized preview image
+        previewImage: data.previewImage,
         video_preview: data.video_preview,
-        series: { connect: { id: data.seriesId } }, // Connect to the existing series
+        series: { connect: { id: data.seriesId } },
       },
     });
 
-    // If there are course images, create CourseImage entries
-    if (data.courseImages.length > 0) {
-      await prisma.courseImage.createMany({
-        data: data.courseImages.map((image: string) => ({
-          courseId: course.id,
-          image,
-        })),
-      });
-    }
+    // Create CourseImage entries one by one
+    const courseImages = await Promise.all(
+      data.courseImages.map((image: string) =>
+        prisma.courseImage.create({
+          data: {
+            courseId: course.id,
+            image,
+          },
+        })
+      )
+    );
 
-    return course;
+    // Return course with images
+    return {
+      ...course,
+      CourseImage: courseImages,
+    };
   } catch (error) {
     console.error("Error creating course:", error);
     throw new Error("Database error while creating course");
