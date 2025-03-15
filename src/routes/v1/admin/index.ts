@@ -11,6 +11,11 @@ import {
   deleteSeries,
   updateSeries,
 } from "../../../controllers/admin/SeriesController";
+import {
+  createCourse,
+  deleteCourse,
+  updateCourse,
+} from "../../../controllers/admin/courseController";
 
 const router = express.Router();
 
@@ -25,5 +30,24 @@ router.delete("/providers", deleteProvider);
 router.post("/series", uploadMemory.single("image"), createSerie);
 router.patch("/series", uploadMemory.single("image"), updateSeries);
 router.delete("/series", deleteSeries);
+
+//CRUD for Course
+router.post(
+  "/courses",
+  uploadMemory.fields([
+    { name: "previewImage", maxCount: 1 },
+    { name: "images", maxCount: 5 },
+  ]),
+  createCourse
+);
+router.patch(
+  "/courses",
+  uploadMemory.fields([
+    { name: "previewImage", maxCount: 1 },
+    { name: "images", maxCount: 10 },
+  ]),
+  updateCourse
+);
+router.delete("/courses", deleteCourse);
 
 export default router;
