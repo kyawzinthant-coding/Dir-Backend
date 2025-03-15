@@ -35,6 +35,11 @@ export const createProviderValidation = [
     .withMessage("Name must be a string")
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
+  body("description")
+    .notEmpty()
+    .withMessage("Description is required")
+    .isString()
+    .withMessage("Description must be a string"),
 ];
 
 export const updateProviderValidation = [
@@ -45,6 +50,10 @@ export const updateProviderValidation = [
     .withMessage("Name must be a string")
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("Description must be a string"),
 ];
 
 export const createSeriesValidation = [
@@ -55,6 +64,12 @@ export const createSeriesValidation = [
     .withMessage("Name must be a string")
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
+
+  body("description")
+    .notEmpty()
+    .withMessage("Description is required")
+    .isString()
+    .withMessage("Description must be a string"),
 
   body("providerId")
     .notEmpty()
@@ -78,6 +93,11 @@ export const updateSeriesValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
 
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("Description must be a string"),
+
   body("providerId")
     .optional()
     .isString()
@@ -98,17 +118,58 @@ export const createCourseValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
 
+  body("description")
+    .notEmpty()
+    .withMessage("Description is required")
+    .isString()
+    .withMessage("Description must be a string"),
+
+  body("status")
+    .optional()
+    .isIn(["ACTIVE", "INACTIVE", "FREEZE"])
+    .withMessage("Invalid status value"),
+
   body("duration")
     .notEmpty()
     .withMessage("Duration is required")
     .isString()
     .withMessage("Duration must be a string"),
 
-  body("image")
+  body("requirements")
+    .isArray()
+    .withMessage("Requirements must be an array of strings"),
+
+  body("price")
     .notEmpty()
-    .withMessage("Image is required")
+    .withMessage("Price is required")
+    .isInt({ min: 0 })
+    .withMessage("Price must be a positive integer"),
+
+  body("format")
+    .notEmpty()
+    .withMessage("Format is required")
+    .isIn(["PAPERBACK", "DIGITAL"])
+    .withMessage("Invalid format"),
+
+  body("edition")
+    .notEmpty()
+    .withMessage("Edition is required")
     .isString()
-    .withMessage("Image must be a string"),
+    .withMessage("Edition must be a string"),
+
+  body("authors").isArray().withMessage("Authors must be an array of strings"),
+
+  body("previewImage")
+    .notEmpty()
+    .withMessage("Preview image is required")
+    .isString()
+    .withMessage("Preview image must be a string"),
+
+  body("video_preview")
+    .notEmpty()
+    .withMessage("Video preview is required")
+    .isString()
+    .withMessage("Video preview must be a string"),
 
   body("seriesId")
     .notEmpty()
@@ -118,6 +179,7 @@ export const createCourseValidation = [
 ];
 
 export const updateCourseValidation = [
+  body("courseId", "Course Id is required.").isString(),
   body("name")
     .optional()
     .isString()
@@ -125,12 +187,52 @@ export const updateCourseValidation = [
     .isLength({ min: 2, max: 50 })
     .withMessage("Name must be between 2 and 50 characters"),
 
+  body("description")
+    .optional()
+    .isString()
+    .withMessage("Description must be a string"),
+
+  body("status")
+    .optional()
+    .isIn(["ACTIVE", "INACTIVE", "FREEZE"])
+    .withMessage("Invalid status value"),
+
   body("duration")
     .optional()
     .isString()
     .withMessage("Duration must be a string"),
 
-  body("image").optional().isString().withMessage("Image must be a string"),
+  body("requirements")
+    .optional()
+    .isArray()
+    .withMessage("Requirements must be an array of strings"),
+
+  body("price")
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage("Price must be a positive integer"),
+
+  body("format")
+    .optional()
+    .isIn(["PAPERBACK", "DIGITAL"])
+    .withMessage("Invalid format"),
+
+  body("edition").optional().isString().withMessage("Edition must be a string"),
+
+  body("authors")
+    .optional()
+    .isArray()
+    .withMessage("Authors must be an array of strings"),
+
+  body("previewImage")
+    .optional()
+    .isString()
+    .withMessage("Preview image must be a string"),
+
+  body("video_preview")
+    .optional()
+    .isString()
+    .withMessage("Video preview must be a string"),
 
   body("seriesId")
     .optional()

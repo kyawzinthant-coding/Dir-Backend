@@ -4,6 +4,7 @@ import { prisma } from "./prismaClient";
 export interface ProviderArgs {
   name: string;
   image: string;
+  description: string;
   series?: Series[];
 }
 
@@ -11,6 +12,7 @@ export const createOneProvider = async (providerData: ProviderArgs) => {
   let data = {
     name: providerData.name,
     image: providerData.image,
+    description: providerData.description,
   };
 
   return await prisma.provider.create({
@@ -32,6 +34,7 @@ export const updateOneProvider = async (
 ) => {
   let data: any = {
     name: providerData.name,
+    description: providerData.description,
   };
   if (providerData.image) {
     data.image = providerData.image;

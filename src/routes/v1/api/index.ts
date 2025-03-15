@@ -20,5 +20,7 @@ router.patch(
 router.get("/providers/:id", getProvider);
 router.get("/series/:id", getSerie);
 
+// get sereies with provider
+
 router.get("/providers", getProviderByPagination);
 export default router;

@@ -5,12 +5,14 @@ export interface SeriesArgs {
   image: string;
   providerId: string;
   category: string;
+  description: string;
 }
 
 export const createSeries = async (seriesData: SeriesArgs) => {
   const data = {
     name: seriesData.name,
     image: seriesData.image,
+    description: seriesData.description,
     provider: {
       connect: { id: seriesData.providerId },
     },
@@ -37,6 +39,7 @@ export const getOneSeriesWithRelationShip = async (id: string) => {
     select: {
       name: true,
       image: true,
+      description: true,
       provider: {
         select: {
           name: true,
@@ -55,6 +58,7 @@ export const updateOneSeries = async (id: string, seriesData: SeriesArgs) => {
   let data: any = {
     name: seriesData.name,
     image: seriesData.image,
+    description: seriesData.description,
   };
   if (seriesData.providerId) {
     data.provider = {

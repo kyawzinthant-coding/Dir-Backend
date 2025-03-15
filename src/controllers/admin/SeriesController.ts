@@ -27,7 +27,7 @@ export const createSerie = [
     if (errors.length > 0)
       return next(createError(errors[0].msg, 400, "invalid"));
 
-    const { name, providerId, category } = req.body;
+    const { name, providerId, category, description } = req.body;
     const image = req.file;
 
     if (!image) {
@@ -55,9 +55,8 @@ export const createSerie = [
       image: fileName,
       category,
       providerId,
+      description,
     };
-
-    console.log(data);
 
     let series;
     try {
@@ -81,7 +80,7 @@ export const updateSeries = [
     const errors = validationResult(req).array({ onlyFirstError: true });
     if (errors.length > 0)
       return next(createError(errors[0].msg, 400, "invalid"));
-    const { name, providerId, category, seriesId } = req.body;
+    const { name, providerId, category, seriesId, description } = req.body;
 
     console.log(seriesId);
     const series = await getOneSerie(seriesId);
@@ -91,6 +90,7 @@ export const updateSeries = [
       name,
       category,
       providerId,
+      description,
       image: req.file?.filename!,
     };
 

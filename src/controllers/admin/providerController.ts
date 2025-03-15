@@ -34,7 +34,7 @@ export const createProvider = [
     if (errors.length > 0)
       return next(createError(errors[0].msg, 400, "invalid"));
 
-    const { name } = req.body;
+    const { name, description } = req.body;
 
     const image = req.file;
 
@@ -54,6 +54,7 @@ export const createProvider = [
     const data: ProviderArgs = {
       name,
       image: fileName,
+      description,
     };
 
     await createOneProvider(data);
@@ -70,7 +71,7 @@ export const updateProvider = [
     if (errors.length > 0)
       return next(createError(errors[0].msg, 400, "invalid"));
 
-    const { name, providerId } = req.body;
+    const { name, providerId, description } = req.body;
 
     const provider = await getProviderById(providerId);
     if (provider == null) {
@@ -82,6 +83,7 @@ export const updateProvider = [
     let data: ProviderArgs = {
       name,
       image: req.file?.filename!,
+      description,
     };
 
     if (req.file) {

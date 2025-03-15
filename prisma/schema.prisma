@@ -21,36 +21,82 @@ model User {
 }
 
 model Provider {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  image     String
-  series    Series[] @relation("ProviderToSeries")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  image       String
+  description String
+  series      Series[] @relation("ProviderToSeries")
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Series {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  name       String
-  image      String
-  provider   Provider @relation(fields: [providerId], references: [id], name: "ProviderToSeries")
-  providerId String   @db.ObjectId
-  courses    Course[] @relation("SeriesToCourse")
-  categoryId String   @db.ObjectId
-  category   Category @relation(fields: [categoryId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  image       String
+  provider    Provider @relation(fields: [providerId], references: [id], name: "ProviderToSeries")
+  providerId  String   @db.ObjectId
+  description String
+  courses     Course[] @relation("SeriesToCourse")
+  status      Status   @default(ACTIVE)
+  categoryId  String   @db.ObjectId
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Course {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  description   String
+  status        Status   @default(ACTIVE)
+  duration      String
+  requirements  String[]
+  price         Int
+  format        Format
+  edition       String
+  authors       String[]
+  previewImage  String
+  video_preview String
+  series        Series   @relation(fields: [seriesId], references: [id], name: "SeriesToCourse")
+  seriesId      String   @db.ObjectId
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  CourseImage CourseImage[] @relation(name: "CourseToImage")
+
+  CourseFAQ CourseFAQ[] @relation(name: "CourseToFAQ")
+
+  RelatedCourse RelatedCourse[] @relation(name: "RelatedCourseToCourse")
+}
+
+model CourseImage {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  duration  String
+  course    Course   @relation(fields: [courseId], references: [id], name: "CourseToImage")
+  courseId  String   @db.ObjectId
   image     String
-  series    Series   @relation(fields: [seriesId], references: [id], name: "SeriesToCourse")
-  seriesId  String   @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CourseFAQ {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  course    Course   @relation(fields: [courseId], references: [id], name: "CourseToFAQ")
+  courseId  String   @db.ObjectId
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RelatedCourse {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  courseId        String   @db.ObjectId
+  relatedCourse   Course   @relation(fields: [relatedCourseId], references: [id], name: "RelatedCourseToCourse")
+  relatedCourseId String   @db.ObjectId
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 enum Role {
@@ -63,6 +109,11 @@ enum Status {
   ACTIVE
   INACTIVE
   FREEZE
+}
+
+enum Format {
+  PAPERBACK
+  DIGITAL
 }
 
 model Category {
