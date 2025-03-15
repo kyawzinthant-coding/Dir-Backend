@@ -31,3 +31,14 @@ export const removeFiles = async (originalFile: string) => {
     console.log(error);
   }
 };
+
+export const removeManyFiles = async (originalFiles: string[]) => {
+  try {
+    for (const originalFile of originalFiles) {
+      const originalFilePath = path.join(UPLOADS_DIR, originalFile);
+      await unlink(originalFilePath);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};

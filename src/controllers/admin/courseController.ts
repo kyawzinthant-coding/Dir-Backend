@@ -1,8 +1,13 @@
+import { checkUploadFile } from "./../../utils/check";
 import { createCourseValidation } from "../../middlewares/validation";
 import { body, validationResult } from "express-validator";
 import { NextFunction, Request, Response } from "express";
 import { createError } from "../../utils/error";
 import { errorCode } from "../../../config/errorCode";
+
+import path from "path";
+import { optimizeImage, UPLOADS_DIR } from "../../utils/optimizeImage";
+import { createCourseService } from "../../services/productService";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -21,7 +26,6 @@ export const createCourse = [
     const {
       name,
       description,
-      duration,
       requirements,
       price,
       format,
@@ -36,21 +40,67 @@ export const createCourse = [
     // Extract multiple images
     const images = req.files?.["images"] || [];
 
-    const data = {
+    checkUploadFile(previewImage);
+    checkUploadFile(images);
+    // await createCourseService(data, images);
+
+    const previewFileName =
+      Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
+    const optmizedImage = path.join(UPLOADS_DIR, previewFileName);
+
+    try {
+      await optimizeImage(previewImage!.buffer, optmizedImage, 835, 577, 100);
+      console.log("Image optimized successfully!");
+    } catch (error) {
+      console.error("Failed to optimize image:", error);
+      return next(
+        createError("Image optimization failed", 500, "server_error")
+      );
+    }
+
+    // Process course images
+    const optimizedImageNames: string[] = [];
+    for (const image of images) {
+      const imageFileName = `${Date.now()}-${Math.round(
+        Math.random() * 1e9
+      )}.webp`;
+      const optimizedImagePath = path.join(UPLOADS_DIR, imageFileName);
+
+      try {
+        await optimizeImage(image.buffer, optimizedImagePath, 835, 577, 100);
+        console.log(`Image ${image.originalname} optimized successfully!`);
+        optimizedImageNames.push(imageFileName);
+      } catch (error) {
+        console.error(`Failed to optimize ${image.originalname}:`, error);
+        return next(
+          createError("Image optimization failed", 500, "server_error")
+        );
+      }
+    }
+
+    const courseData = {
       name,
       description,
-      duration,
       requirements,
       price,
       format,
       edition,
       authors,
-      previewImage,
+      previewImage: previewFileName, // Optimized preview image
       video_preview,
+      courseImages: optimizedImageNames, // Optimized images
       seriesId,
     };
 
-    // await createCourseService(data, images);
+    try {
+      const createdCourse = await createCourseService(courseData);
+      res.status(201).json({
+        message: "Course created successfully",
+        course: createdCourse,
+      });
+    } catch (error) {
+      return next(createError("Failed to create course", 500, "server_error"));
+    }
   },
 ];
 

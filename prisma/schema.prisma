@@ -51,7 +51,6 @@ model Course {
   name          String
   description   String
   status        Status   @default(ACTIVE)
-  duration      String
   requirements  String[]
   price         Int
   format        Format
@@ -99,6 +98,11 @@ model RelatedCourse {
   updatedAt       DateTime @updatedAt
 }
 
+enum Format {
+  PAPERBACK
+  DIGITAL
+}
+
 enum Role {
   USER
   ADMIN
@@ -109,11 +113,6 @@ enum Status {
   ACTIVE
   INACTIVE
   FREEZE
-}
-
-enum Format {
-  PAPERBACK
-  DIGITAL
 }
 
 model Category {

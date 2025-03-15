@@ -124,17 +124,6 @@ export const createCourseValidation = [
     .isString()
     .withMessage("Description must be a string"),
 
-  body("status")
-    .optional()
-    .isIn(["ACTIVE", "INACTIVE", "FREEZE"])
-    .withMessage("Invalid status value"),
-
-  body("duration")
-    .notEmpty()
-    .withMessage("Duration is required")
-    .isString()
-    .withMessage("Duration must be a string"),
-
   body("requirements")
     .isArray()
     .withMessage("Requirements must be an array of strings"),
@@ -158,12 +147,6 @@ export const createCourseValidation = [
     .withMessage("Edition must be a string"),
 
   body("authors").isArray().withMessage("Authors must be an array of strings"),
-
-  body("previewImage")
-    .notEmpty()
-    .withMessage("Preview image is required")
-    .isString()
-    .withMessage("Preview image must be a string"),
 
   body("video_preview")
     .notEmpty()
