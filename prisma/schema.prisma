@@ -72,7 +72,7 @@ model Course {
 
 model CourseImage {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  course    Course   @relation(fields: [courseId], references: [id], name: "CourseToImage")
+  course    Course   @relation(fields: [courseId], references: [id], name: "CourseToImage", onDelete: Cascade)
   courseId  String   @db.ObjectId
   image     String
   createdAt DateTime @default(now())

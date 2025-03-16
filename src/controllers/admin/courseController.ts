@@ -16,6 +16,7 @@ import {
 } from "../../utils/optimizeImage";
 import {
   createCourseService,
+  deleteOneCourse,
   getCourseByIdService,
   updateOneCourse,
 } from "../../services/courseService";
@@ -226,5 +227,21 @@ export const deleteCourse = [
     }
 
     const { courseId } = req.body;
+
+    const course = await getCourseByIdService(courseId);
+    checkModelIfExist(course);
+
+    const deletedCourse = await deleteOneCourse(courseId);
+    await removeFiles(course!.previewImage);
+
+    if (course?.CourseImage) {
+      course?.CourseImage.map(async (image) => {
+        await removeFiles(image.image);
+      });
+    }
+    res.status(200).json({
+      message: "Course deleted successfully",
+      deletedCourse,
+    });
   },
 ];

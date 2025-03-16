@@ -106,3 +106,13 @@ export const updateOneCourse = async (courseId: string, courseData: any) => {
 
   return course;
 };
+
+export const deleteOneCourse = async (courseId: string) => {
+  return await prisma.course.delete({
+    where: { id: courseId },
+  });
+};
+
+export const getCourseList = async (options: any) => {
+  return prisma.course.findMany(options);
+};
