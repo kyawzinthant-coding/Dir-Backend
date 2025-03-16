@@ -1,13 +1,24 @@
-import { checkUploadFile } from "./../../utils/check";
-import { createCourseValidation } from "../../middlewares/validation";
+import { checkModelIfExist, checkUploadFile } from "./../../utils/check";
+import {
+  createCourseValidation,
+  updateCourseValidation,
+} from "../../middlewares/validation";
 import { body, validationResult } from "express-validator";
 import { NextFunction, Request, Response } from "express";
 import { createError } from "../../utils/error";
 import { errorCode } from "../../../config/errorCode";
 
 import path from "path";
-import { optimizeImage, UPLOADS_DIR } from "../../utils/optimizeImage";
-import { createCourseService } from "../../services/courseService";
+import {
+  optimizeImage,
+  removeFiles,
+  UPLOADS_DIR,
+} from "../../utils/optimizeImage";
+import {
+  createCourseService,
+  getCourseByIdService,
+  updateOneCourse,
+} from "../../services/courseService";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -105,7 +116,7 @@ export const createCourse = [
 ];
 
 export const updateCourse = [
-  ...createCourseValidation,
+  ...updateCourseValidation,
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const errors = validationResult(req).array({ onlyFirstError: true });
     if (errors.length > 0) {
@@ -115,7 +126,6 @@ export const updateCourse = [
     const {
       name,
       description,
-      duration,
       requirements,
       price,
       format,
@@ -126,10 +136,84 @@ export const updateCourse = [
       courseId,
     } = req.body;
 
-    const previewImage = req.files?.["previewImage"]?.[0] || null;
+    const course = await getCourseByIdService(courseId);
+    checkModelIfExist(course);
+
+    const courseData: any = {
+      name,
+      description,
+      requirements,
+      price,
+      format,
+      edition,
+      authors,
+      video_preview,
+      seriesId,
+      previewImage: course?.previewImage,
+      courseImages: [] as any,
+    };
+
+    const preview = req.files?.["previewImage"]?.[0] || null;
 
     // Extract multiple images
     const images = req.files?.["images"] || [];
+
+    if (req.files?.["previewImage"]?.[0]) {
+      checkUploadFile(preview);
+
+      const previewFileName =
+        Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
+      const optmizedImage = path.join(UPLOADS_DIR, previewFileName);
+
+      try {
+        await optimizeImage(preview!.buffer, optmizedImage, 835, 577, 100);
+        console.log("Image optimized successfully!");
+        courseData.previewImage = previewFileName;
+      } catch (error) {
+        console.error("Failed to optimize image:", error);
+        return next(
+          createError("Image optimization failed", 500, "server_error")
+        );
+      }
+    }
+
+    if (images.length > 0) {
+      const optimizedImageNames: string[] = [];
+      for (const image of images) {
+        const imageFileName = `${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}.webp`;
+        const optimizedImagePath = path.join(UPLOADS_DIR, imageFileName);
+
+        try {
+          await optimizeImage(image.buffer, optimizedImagePath, 835, 577, 100);
+          console.log(`Image ${image.originalname} optimized successfully!`);
+          optimizedImageNames.push(imageFileName);
+        } catch (error) {
+          console.error(`Failed to optimize ${image.originalname}:`, error);
+          return next(
+            createError("Image optimization failed", 500, "server_error")
+          );
+        }
+      }
+      courseData.courseImages = optimizedImageNames;
+      course?.CourseImage.map(async (image) => {
+        if (!optimizedImageNames.includes(image.image)) {
+          await removeFiles(image.image);
+        }
+      });
+    }
+
+    try {
+      const updatedCourse = await updateOneCourse(courseId, courseData);
+      res.status(200).json({
+        message: "Course updated successfully",
+        course: updatedCourse,
+      });
+    } catch (error) {
+      console.error("Error updating course:", error);
+      return next(createError("Failed to update course", 500, "server_error"));
+    }
   },
 ];
 

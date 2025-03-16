@@ -1,4 +1,19 @@
+import { Course, Format } from "@prisma/client";
 import { prisma } from "./prismaClient";
+
+interface CourseArgs {
+  name: string;
+  description: string;
+  requirements: string[];
+  price: number;
+  format: Format;
+  edition: string;
+  authors: string[];
+  previewImage: string;
+  video_preview: string;
+  seriesId: string;
+  courseImages: any;
+}
 
 export const createCourseService = async (data: any) => {
   try {
@@ -39,4 +54,55 @@ export const createCourseService = async (data: any) => {
     console.error("Error creating course:", error);
     throw new Error("Database error while creating course");
   }
+};
+
+export const getCourseByIdService = async (courseId: string) => {
+  return await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      CourseImage: true,
+    },
+  });
+};
+
+export const updateOneCourse = async (courseId: string, courseData: any) => {
+  // Filter out undefined values
+  const courseInfo: any = Object.fromEntries(
+    Object.entries({
+      name: courseData.name,
+      description: courseData.description,
+      requirements: courseData.requirements,
+      price: courseData.price !== undefined ? +courseData.price : undefined,
+      format: courseData.format,
+      edition: courseData.edition,
+      authors: courseData.authors,
+      previewImage: courseData.previewImage,
+      video_preview: courseData.video_preview,
+      series: courseData.seriesId
+        ? { connect: { id: courseData.seriesId } }
+        : undefined,
+    }).filter(([_, v]) => v !== undefined) // Remove undefined values
+  );
+
+  // If images are updated, replace them
+  if (courseData.courseImages && courseData.courseImages.length > 0) {
+    await prisma.courseImage.deleteMany({
+      where: { courseId },
+    });
+    await Promise.all(
+      courseData.courseImages.map((image: string) =>
+        prisma.courseImage.create({
+          data: { courseId, image },
+        })
+      )
+    );
+  }
+
+  // Update the course
+  const course = await prisma.course.update({
+    where: { id: courseId },
+    data: courseInfo,
+  });
+
+  return course;
 };
