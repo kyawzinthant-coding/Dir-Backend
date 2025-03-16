@@ -6,6 +6,7 @@ import { checkModelIfExist } from "../../utils/check";
 import {
   getOneSerie,
   getOneSeriesWithRelationShip,
+  getSeriesByProviderService,
 } from "../../services/seriesService";
 
 export const getSerie = [
@@ -25,6 +26,25 @@ export const getSerie = [
     res.status(200).json({
       message: "Series details",
       serie,
+    });
+  },
+];
+
+export const getSeriesByProvider = [
+  param("providerId", "Provider id is required").notEmpty(),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req).array({ onlyFirstError: true });
+    if (errors.length > 0) {
+      return next(createError(errors[0].msg, 400, errorCode.invalid));
+    }
+
+    const providerId = req.params.providerId;
+    const series = await getSeriesByProviderService(providerId);
+    checkModelIfExist(series);
+
+    res.status(200).json({
+      message: "Series details",
+      series,
     });
   },
 ];

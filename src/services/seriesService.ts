@@ -84,3 +84,22 @@ export const deleteOneSeries = async (id: string) => {
     where: { id },
   });
 };
+
+export const getSeriesByProviderService = async (id: string) => {
+  return prisma.series.findMany({
+    where: {
+      providerId: id,
+    },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      description: true,
+      category: {
+        select: {
+          name: true,
+        },
+      },
+    },
+  });
+};

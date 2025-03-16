@@ -6,7 +6,10 @@ import {
   getProvider,
   getProviderByPagination,
 } from "../../../controllers/api/providerController";
-import { getSerie } from "../../../controllers/api/SeriesController";
+import {
+  getSerie,
+  getSeriesByProvider,
+} from "../../../controllers/api/SeriesController";
 
 const router = express.Router();
 
@@ -23,4 +26,6 @@ router.get("/series/:id", getSerie);
 // get sereies with provider
 
 router.get("/providers", getProviderByPagination);
+router.get("/providers/:providerId/series", getSeriesByProvider);
+
 export default router;
