@@ -45,7 +45,7 @@ export const createProvider = [
     const optmizedImage = path.join(UPLOADS_DIR, fileName);
 
     try {
-      await optimizeImage(image!.buffer, optmizedImage, 900, 500, 90);
+      await optimizeImage(image!.buffer, optmizedImage, 900, 500, 100);
       console.log("Image optimized successfully!");
     } catch (error) {
       console.error("Failed to optimize image:", error);

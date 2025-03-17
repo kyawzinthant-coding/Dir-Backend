@@ -30,6 +30,18 @@ export const createSeries = async (seriesData: SeriesArgs) => {
 export const getOneSerie = async (id: string) => {
   return prisma.series.findUnique({
     where: { id },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      description: true,
+      category: true,
+      _count: {
+        select: {
+          courses: true,
+        },
+      },
+    },
   });
 };
 
@@ -99,6 +111,9 @@ export const getSeriesByProviderService = async (id: string) => {
         select: {
           name: true,
         },
+      },
+      _count: {
+        select: { courses: true },
       },
     },
   });

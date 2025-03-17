@@ -25,6 +25,12 @@ export const getProviderById = async (providerId: string) => {
     where: {
       id: providerId,
     },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      description: true,
+    },
   });
 };
 

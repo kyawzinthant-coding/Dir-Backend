@@ -116,3 +116,18 @@ export const deleteOneCourse = async (courseId: string) => {
 export const getCourseList = async (options: any) => {
   return prisma.course.findMany(options);
 };
+
+export const getCoursesBySeriesService = async (id: string) => {
+  return prisma.course.findMany({
+    where: {
+      seriesId: id,
+    },
+    select: {
+      id: true,
+      name: true,
+      previewImage: true,
+      description: true,
+      price: true,
+    },
+  });
+};

@@ -8,6 +8,7 @@ import {
   getOneSeriesWithRelationShip,
   getSeriesByProviderService,
 } from "../../services/seriesService";
+import { getProviderById } from "../../services/ProviderService";
 
 export const getSerie = [
   param("id", "Series id is required").notEmpty(),
@@ -39,11 +40,13 @@ export const getSeriesByProvider = [
     }
 
     const providerId = req.params.providerId;
+    const provider = await getProviderById(providerId);
     const series = await getSeriesByProviderService(providerId);
     checkModelIfExist(series);
 
     res.status(200).json({
       message: "Series details",
+      provider,
       series,
     });
   },

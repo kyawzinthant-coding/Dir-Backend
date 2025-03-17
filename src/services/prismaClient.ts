@@ -49,5 +49,13 @@ export const prisma = new PrismaClient().$extends({
         },
       },
     },
+    course: {
+      previewImage: {
+        needs: { previewImage: true },
+        compute(course) {
+          return "/images/" + course.previewImage.split(".")[0] + ".webp";
+        },
+      },
+    },
   },
 });
