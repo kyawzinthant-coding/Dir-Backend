@@ -10,7 +10,10 @@ import {
   getSerie,
   getSeriesByProvider,
 } from "../../../controllers/api/SeriesController";
-import { getCoursesBySeries } from "../../../controllers/api/courseController";
+import {
+  getCourseById,
+  getCoursesBySeries,
+} from "../../../controllers/api/courseController";
 
 const router = express.Router();
 
@@ -32,5 +35,7 @@ router.get("/providers/:providerId/series", getSeriesByProvider);
 // // get courses with series
 router.get("/series/:seriesId/courses", getCoursesBySeries);
 // router.get("/providers/:providerId/series/:seriesId/courses/:courseId");
+
+router.get("/courses/:courseId", getCourseById);
 
 export default router;
