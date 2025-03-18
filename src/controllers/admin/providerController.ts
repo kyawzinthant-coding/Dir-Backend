@@ -21,6 +21,12 @@ import {
   updateOneProvider,
 } from "../../services/ProviderService";
 import { errorCode } from "../../../config/errorCode";
+import {
+  removeCloudinaryFile,
+  uploadToCloudinary,
+} from "../../middlewares/uploadFile";
+import { prisma } from "../../services/prismaClient";
+import { removeImage } from "../../services/ImageService";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -38,28 +44,54 @@ export const createProvider = [
 
     const image = req.file;
 
+    if (!image) {
+      return next(createError("Image file is required", 400, "invalid"));
+    }
+
     checkUploadFile(image);
 
     const fileName =
       Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
-    const optmizedImage = path.join(UPLOADS_DIR, fileName);
 
+    let cloudinaryFile: any;
     try {
-      await optimizeImage(image!.buffer, optmizedImage, 900, 500, 100);
+      cloudinaryFile = await uploadToCloudinary(image.buffer, fileName);
       console.log("Image optimized successfully!");
     } catch (error) {
       console.error("Failed to optimize image:", error);
+      return next(
+        createError("Image optimization failed", 500, "server_error")
+      );
     }
+
+    const NewImage = await prisma.image.create({
+      data: {
+        url: cloudinaryFile.secure_url,
+        publicId: cloudinaryFile.public_id,
+      },
+    });
 
     const data: ProviderArgs = {
       name,
-      image: fileName,
+      imageId: NewImage.id,
       description,
     };
 
-    await createOneProvider(data);
+    let providers;
+    try {
+      providers = await createOneProvider(data);
+    } catch (error) {
+      console.error(error);
+      removeCloudinaryFile(cloudinaryFile.public_id);
+      removeImage(NewImage.id);
+      return next(
+        createError("Failed to create provider", 500, "server_error")
+      );
+    }
 
-    res.status(201).json({ message: "Provider created successfully" });
+    res
+      .status(201)
+      .json({ message: "Provider created successfully", provider: providers });
   },
 ];
 
@@ -80,26 +112,37 @@ export const updateProvider = [
       );
     }
 
-    let data: ProviderArgs = {
+    let data: any = {
       name,
-      image: req.file?.filename!,
       description,
     };
 
     if (req.file) {
       const fileName =
         Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
-      const optmizedImage = path.join(UPLOADS_DIR, fileName);
 
+      let cloudinaryFile: any;
       try {
-        await optimizeImage(req.file!.buffer, optmizedImage, 900, 500, 90);
+        cloudinaryFile = await uploadToCloudinary(req.file.buffer, fileName);
         console.log("Image optimized successfully!");
       } catch (error) {
         console.error("Failed to optimize image:", error);
+        return next(
+          createError("Image optimization failed", 500, "server_error")
+        );
       }
+      const NewImage = await prisma.image.create({
+        data: {
+          url: cloudinaryFile.secure_url,
+          publicId: cloudinaryFile.public_id,
+        },
+      });
 
-      data.image = fileName;
-      await removeFiles(provider.image);
+      data.imageId = NewImage.id;
+      if (provider?.image?.publicId) {
+        await removeCloudinaryFile(provider!.image.publicId);
+        await removeImage(provider!.image.id);
+      }
     }
 
     await updateOneProvider(provider.id, data);
@@ -126,7 +169,10 @@ export const deleteProvider = [
     checkModelIfExist(provider);
 
     await deleteOneProvider(provider?.id!);
-    await removeFiles(provider?.image!);
+    if (provider?.image?.publicId) {
+      await removeCloudinaryFile(provider!.image.publicId);
+      await removeImage(provider!.image.id);
+    }
 
     res.status(200).json({
       message: "Successfully deleted the provider.",

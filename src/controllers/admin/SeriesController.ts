@@ -19,6 +19,12 @@ import {
   createSeriesValidation,
   updateSeriesValidation,
 } from "../../middlewares/validation";
+import {
+  removeCloudinaryFile,
+  uploadToCloudinary,
+} from "../../middlewares/uploadFile";
+import { prisma } from "../../services/prismaClient";
+import { removeImage } from "../../services/ImageService";
 
 export const createSerie = [
   ...createSeriesValidation,
@@ -38,10 +44,10 @@ export const createSerie = [
 
     const fileName =
       Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
-    const optmizedImage = path.join(UPLOADS_DIR, fileName);
 
+    let cloudinaryFile: any;
     try {
-      await optimizeImage(image.buffer, optmizedImage, 900, 500, 100);
+      cloudinaryFile = await uploadToCloudinary(image.buffer, fileName);
       console.log("Image optimized successfully!");
     } catch (error) {
       console.error("Failed to optimize image:", error);
@@ -50,9 +56,16 @@ export const createSerie = [
       );
     }
 
+    const NewImage = await prisma.image.create({
+      data: {
+        url: cloudinaryFile.secure_url,
+        publicId: cloudinaryFile.public_id,
+      },
+    });
+
     const data = {
       name,
-      image: fileName,
+      imageId: NewImage.id,
       category,
       providerId,
       description,
@@ -63,7 +76,8 @@ export const createSerie = [
       series = await createSeries(data);
     } catch (error) {
       console.error(error);
-      removeFiles(data.image);
+      removeCloudinaryFile(cloudinaryFile.public_id);
+      removeImage(NewImage.id);
       return next(createError("Failed to create series", 500, "server_error"));
     }
 
@@ -82,25 +96,23 @@ export const updateSeries = [
       return next(createError(errors[0].msg, 400, "invalid"));
     const { name, providerId, category, seriesId, description } = req.body;
 
-    console.log(seriesId);
     const series = await getOneSerie(seriesId);
     checkModelIfExist(series);
 
-    let data: SeriesArgs = {
+    let data: any = {
       name,
       category,
       providerId,
       description,
-      image: req.file?.filename!,
     };
 
     if (req.file) {
       const fileName =
         Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
-      const optmizedImage = path.join(UPLOADS_DIR, fileName);
 
+      let cloudinaryFile: any;
       try {
-        await optimizeImage(req.file!.buffer, optmizedImage, 900, 500, 90);
+        cloudinaryFile = await uploadToCloudinary(req.file.buffer, fileName);
         console.log("Image optimized successfully!");
       } catch (error) {
         console.error("Failed to optimize image:", error);
@@ -109,8 +121,18 @@ export const updateSeries = [
         );
       }
 
-      data.image = fileName;
-      await removeFiles(series!.image);
+      const NewImage = await prisma.image.create({
+        data: {
+          url: cloudinaryFile.secure_url,
+          publicId: cloudinaryFile.public_id,
+        },
+      });
+
+      data.imageId = NewImage.id;
+      if (series?.image?.publicId) {
+        await removeCloudinaryFile(series!.image.publicId);
+        await removeImage(series!.image.id);
+      }
     }
 
     const updatedSeries = await updateOneSeries(series!.id, data);
@@ -133,7 +155,10 @@ export const deleteSeries = [
     checkModelIfExist(series);
 
     await deleteOneSeries(seriesId);
-    await removeFiles(series!.image);
+    if (series?.image?.publicId) {
+      await removeCloudinaryFile(series!.image.publicId);
+      await removeImage(series!.image.id);
+    }
     res.status(200).json({
       message: "Series deleted successfully",
       seriesId,

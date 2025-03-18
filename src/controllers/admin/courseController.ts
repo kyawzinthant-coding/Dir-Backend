@@ -20,6 +20,13 @@ import {
   getCourseByIdService,
   updateOneCourse,
 } from "../../services/courseService";
+import { getOneSerie } from "../../services/seriesService";
+import {
+  removeCloudinaryFile,
+  uploadToCloudinary,
+} from "../../middlewares/uploadFile";
+import { prisma } from "../../services/prismaClient";
+import { removeImage } from "../../services/ImageService";
 
 interface CustomRequest extends Request {
   userId?: number;
@@ -58,10 +65,13 @@ export const createCourse = [
 
     const previewFileName =
       Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
-    const optmizedImage = path.join(UPLOADS_DIR, previewFileName);
 
+    let cloudinaryFile: any;
     try {
-      await optimizeImage(previewImage!.buffer, optmizedImage, 835, 577, 100);
+      cloudinaryFile = await uploadToCloudinary(
+        previewImage.buffer,
+        previewFileName
+      );
       console.log("Image optimized successfully!");
     } catch (error) {
       console.error("Failed to optimize image:", error);
@@ -69,6 +79,16 @@ export const createCourse = [
         createError("Image optimization failed", 500, "server_error")
       );
     }
+
+    console.log(cloudinaryFile.secure_url);
+
+    const NewImage = await prisma.image.create({
+      data: {
+        url: cloudinaryFile.secure_url,
+        publicId: cloudinaryFile.public_id,
+      },
+    });
+    console.log(NewImage);
 
     // Process course images
     const optimizedImageNames: string[] = [];
@@ -79,7 +99,7 @@ export const createCourse = [
       const optimizedImagePath = path.join(UPLOADS_DIR, imageFileName);
 
       try {
-        await optimizeImage(image.buffer, optimizedImagePath, 835, 577, 100);
+        await optimizeImage(image.buffer, optimizedImagePath, 100);
         console.log(`Image ${image.originalname} optimized successfully!`);
         optimizedImageNames.push(imageFileName);
       } catch (error) {
@@ -98,7 +118,7 @@ export const createCourse = [
       format,
       edition,
       authors,
-      previewImage: previewFileName, // Optimized preview image
+      imageId: NewImage.id, // Optimized preview image
       video_preview,
       courseImages: optimizedImageNames, // Optimized images
       seriesId,
@@ -111,6 +131,8 @@ export const createCourse = [
         course: createdCourse,
       });
     } catch (error) {
+      removeCloudinaryFile(cloudinaryFile.public_id);
+      await removeImage(NewImage.id);
       return next(createError("Failed to create course", 500, "server_error"));
     }
   },
@@ -140,6 +162,11 @@ export const updateCourse = [
     const course = await getCourseByIdService(courseId);
     checkModelIfExist(course);
 
+    if (seriesId) {
+      const seriesOne = await getOneSerie(seriesId);
+      checkModelIfExist(seriesOne);
+    }
+
     const courseData: any = {
       name,
       description,
@@ -151,58 +178,80 @@ export const updateCourse = [
       video_preview,
       seriesId,
       previewImage: course?.previewImage,
-      courseImages: [] as any,
+      courseImages: [],
     };
 
     const preview = req.files?.["previewImage"]?.[0] || null;
-
-    // Extract multiple images
     const images = req.files?.["images"] || [];
 
-    if (req.files?.["previewImage"]?.[0]) {
+    // Handle preview image update
+    if (preview) {
       checkUploadFile(preview);
 
-      const previewFileName =
-        Date.now() + "-" + `${Math.round(Math.random() * 1e9)}.webp`;
-      const optmizedImage = path.join(UPLOADS_DIR, previewFileName);
+      const previewFileName = `${Date.now()}-${Math.round(
+        Math.random() * 1e9
+      )}.webp`;
 
       try {
-        await optimizeImage(preview!.buffer, optmizedImage, 835, 577, 100);
-        console.log("Image optimized successfully!");
-        courseData.previewImage = previewFileName;
-      } catch (error) {
-        console.error("Failed to optimize image:", error);
-        return next(
-          createError("Image optimization failed", 500, "server_error")
+        const cloudinaryFile: any = await uploadToCloudinary(
+          preview.buffer,
+          previewFileName
         );
+        console.log("Preview image uploaded successfully!");
+
+        // Create a new image entry in the database
+        const newImage = await prisma.image.create({
+          data: {
+            url: cloudinaryFile.secure_url,
+            publicId: cloudinaryFile.public_id,
+          },
+        });
+
+        courseData.previewImage = newImage.id;
+
+        // Remove old preview image if exists
+        if (course?.previewImage?.publicId) {
+          await removeCloudinaryFile(course!.previewImage.publicId);
+          await removeImage(course!.previewImage.id);
+        }
+      } catch (error) {
+        console.error("Preview image upload failed:", error);
+        return next(createError("Image upload failed", 500, "server_error"));
       }
     }
 
+    // Handle course images update
     if (images.length > 0) {
-      const optimizedImageNames: string[] = [];
-      for (const image of images) {
-        const imageFileName = `${Date.now()}-${Math.round(
-          Math.random() * 1e9
-        )}.webp`;
-        const optimizedImagePath = path.join(UPLOADS_DIR, imageFileName);
+      try {
+        const optimizedImageNames: string[] = [];
 
-        try {
-          await optimizeImage(image.buffer, optimizedImagePath, 835, 577, 100);
-          console.log(`Image ${image.originalname} optimized successfully!`);
-          optimizedImageNames.push(imageFileName);
-        } catch (error) {
-          console.error(`Failed to optimize ${image.originalname}:`, error);
-          return next(
-            createError("Image optimization failed", 500, "server_error")
+        for (const image of images) {
+          checkUploadFile(image);
+
+          const imageFileName = `${Date.now()}-${Math.round(
+            Math.random() * 1e9
+          )}.webp`;
+
+          const cloudinaryFile: any = await uploadToCloudinary(
+            image.buffer,
+            imageFileName
           );
+
+          optimizedImageNames.push(cloudinaryFile.secure_url);
         }
+
+        courseData.courseImages = optimizedImageNames;
+
+        // Remove old images not in the new list
+        for (const image of course?.CourseImage || []) {
+          if (!optimizedImageNames.includes(image.image)) {
+            await removeFiles(image.image);
+          }
+        }
+      } catch (error) {
+        console.error("Course images update failed:", error);
+        return next(createError("Image update failed", 500, "server_error"));
       }
-      courseData.courseImages = optimizedImageNames;
-      course?.CourseImage.map(async (image) => {
-        if (!optimizedImageNames.includes(image.image)) {
-          await removeFiles(image.image);
-        }
-      });
     }
 
     try {
@@ -232,7 +281,9 @@ export const deleteCourse = [
     checkModelIfExist(course);
 
     const deletedCourse = await deleteOneCourse(courseId);
-    await removeFiles(course!.previewImage);
+    if (course?.previewImage?.id) {
+      await removeFiles(course!.previewImage?.id);
+    }
 
     if (course?.CourseImage) {
       course?.CourseImage.map(async (image) => {

@@ -27,7 +27,7 @@ export const createCourseService = async (data: any) => {
         format: data.format,
         edition: data.edition,
         authors: data.authors,
-        previewImage: data.previewImage,
+        previewImage: { connect: { id: data.imageId } },
         video_preview: data.video_preview,
         series: { connect: { id: data.seriesId } },
       },
@@ -61,50 +61,58 @@ export const getCourseByIdService = async (courseId: string) => {
     where: { id: courseId },
     include: {
       CourseImage: true,
+      previewImage: true,
     },
   });
 };
 
 export const updateOneCourse = async (courseId: string, courseData: any) => {
-  // Filter out undefined values
-  const courseInfo: any = Object.fromEntries(
-    Object.entries({
-      name: courseData.name,
-      description: courseData.description,
-      requirements: courseData.requirements,
-      price: courseData.price !== undefined ? +courseData.price : undefined,
-      format: courseData.format,
-      edition: courseData.edition,
-      authors: courseData.authors,
-      previewImage: courseData.previewImage,
-      video_preview: courseData.video_preview,
-      series: courseData.seriesId
-        ? { connect: { id: courseData.seriesId } }
-        : undefined,
-    }).filter(([_, v]) => v !== undefined) // Remove undefined values
-  );
-
-  // If images are updated, replace them
-  if (courseData.courseImages && courseData.courseImages.length > 0) {
-    await prisma.courseImage.deleteMany({
-      where: { courseId },
-    });
-    await Promise.all(
-      courseData.courseImages.map((image: string) =>
-        prisma.courseImage.create({
-          data: { courseId, image },
-        })
-      )
+  try {
+    // Filter out undefined values
+    const courseInfo: any = Object.fromEntries(
+      Object.entries({
+        name: courseData.name,
+        description: courseData.description,
+        requirements: courseData.requirements,
+        price: courseData.price !== undefined ? +courseData.price : undefined,
+        format: courseData.format,
+        edition: courseData.edition,
+        authors: courseData.authors,
+        previewImage: courseData.previewImage
+          ? { connect: { id: courseData.previewImage } }
+          : undefined, // ✅ Fix previewImage
+        video_preview: courseData.video_preview,
+        series: courseData.seriesId
+          ? { connect: { id: courseData.seriesId } }
+          : undefined,
+      }).filter(([_, v]) => v !== undefined) // Remove undefined values
     );
+
+    // If images are updated, replace them
+    if (courseData.courseImages && courseData.courseImages.length > 0) {
+      await prisma.courseImage.deleteMany({
+        where: { courseId },
+      });
+
+      await prisma.courseImage.createMany({
+        data: courseData.courseImages.map((image: string) => ({
+          courseId,
+          image,
+        })),
+      });
+    }
+
+    // Update the course
+    const course = await prisma.course.update({
+      where: { id: courseId },
+      data: courseInfo,
+    });
+
+    return course;
+  } catch (error) {
+    console.error("Error updating course:", error);
+    throw new Error("Database error while updating course");
   }
-
-  // Update the course
-  const course = await prisma.course.update({
-    where: { id: courseId },
-    data: courseInfo,
-  });
-
-  return course;
 };
 
 export const deleteOneCourse = async (courseId: string) => {
@@ -128,6 +136,7 @@ export const getCoursesBySeriesService = async (id: string) => {
       previewImage: true,
       description: true,
       price: true,
+      imageId: true,
     },
   });
 };

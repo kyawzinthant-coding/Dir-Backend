@@ -29,7 +29,7 @@ export const uploadProfile = async (
   const optmizedImage = path.join(UPLOADS_DIR, fileName);
 
   try {
-    await optimizeImage(image.buffer, optmizedImage, 200, 200, 50);
+    await optimizeImage(image.buffer, optmizedImage, 50);
     console.log("Image optimized successfully!");
   } catch (error) {
     console.error("Failed to optimize image:", error);

@@ -2,24 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 export const prisma = new PrismaClient().$extends({
   result: {
-    user: {
-      image: {
-        needs: { image: true },
-        compute(user) {
-          if (user.image) {
-            return "/images/" + user.image.split(".")[0] + ".webp";
-          }
-          return user.image;
-        },
-      },
-    },
     provider: {
-      image: {
-        needs: { image: true },
-        compute(post) {
-          return "/images/" + post.image.split(".")[0] + ".webp";
-        },
-      },
       updatedAt: {
         needs: { updatedAt: true },
         compute(post) {
@@ -32,12 +15,6 @@ export const prisma = new PrismaClient().$extends({
       },
     },
     series: {
-      image: {
-        needs: { image: true },
-        compute(post) {
-          return "/images/" + post.image.split(".")[0] + ".webp";
-        },
-      },
       updatedAt: {
         needs: { updatedAt: true },
         compute(post) {
@@ -46,14 +23,6 @@ export const prisma = new PrismaClient().$extends({
             month: "long",
             day: "numeric",
           });
-        },
-      },
-    },
-    course: {
-      previewImage: {
-        needs: { previewImage: true },
-        compute(course) {
-          return "/images/" + course.previewImage.split(".")[0] + ".webp";
         },
       },
     },
