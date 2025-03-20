@@ -60,6 +60,7 @@ export const getProviderByPagination = [
         id: true,
         name: true,
         image: true,
+        description: true,
         _count: {
           select: { series: true },
         },
